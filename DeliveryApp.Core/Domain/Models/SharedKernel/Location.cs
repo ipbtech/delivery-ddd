@@ -13,6 +13,8 @@ public class Location : ValueObject
     private const int _minCoordinate = 1;
     private const int _maxCoordinate = 10;
 
+    private static Lazy<Random> _lazyRandom = new();
+
     private Location(int x, int y)
     {
         X = x;
@@ -67,11 +69,9 @@ public class Location : ValueObject
     /// <returns></returns>
     public static Result<Location> CreateRandom()
     {
-        var random = new Random();
-
         return new Location(
-            random.Next(_minCoordinate, _maxCoordinate),
-            random.Next(_minCoordinate, _maxCoordinate)
+            _lazyRandom.Value.Next(_minCoordinate, _maxCoordinate),
+            _lazyRandom.Value.Next(_minCoordinate, _maxCoordinate)
             );
     }
 
