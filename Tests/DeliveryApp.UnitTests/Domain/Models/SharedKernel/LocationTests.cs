@@ -1,4 +1,5 @@
-﻿using DeliveryApp.Core.Domain.Models.SharedKernel;
+﻿using System.Diagnostics.CodeAnalysis;
+using DeliveryApp.Core.Domain.Models.SharedKernel;
 using FluentAssertions;
 using Xunit;
 
@@ -69,5 +70,20 @@ public class LocationTests
         //Assert
         distance.IsSuccess.Should().BeTrue();
         distance.Value.Should().Be(18);
+    }
+
+    [Fact]
+    [SuppressMessage("ReSharper", "UsageOfDefaultStructEquality")]
+    public void CheckEquality()
+    {
+        //Arrange
+        var left = Location.Create(7,7);
+        var right = Location.Create(7, 7);
+
+        //Act
+        var result = right.Equals(left);
+
+        //Assert
+        result.Should().BeTrue();
     }
 }

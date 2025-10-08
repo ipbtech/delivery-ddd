@@ -34,12 +34,12 @@ public class Location : ValueObject
     /// <summary>
     /// Available minimum location
     /// </summary>
-    public static Location Min => new Location(_minCoordinate, _minCoordinate);
+    public static Location Min => new(_minCoordinate, _minCoordinate);
 
     /// <summary>
     /// Available maximum location
     /// </summary>
-    public static Location Max => new Location(_maxCoordinate, _maxCoordinate);
+    public static Location Max => new(_maxCoordinate, _maxCoordinate);
 
 
     /// <summary>
