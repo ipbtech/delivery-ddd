@@ -22,12 +22,12 @@ public class Location : ValueObject
     /// <summary>
     /// Coordinate X
     /// </summary>
-    public int X { get; private set; }
+    public int X { get; }
 
     /// <summary>
     /// Coordinate Y
     /// </summary>
-    public int Y { get; private set; }
+    public int Y { get; }
 
     /// <summary>
     /// Available minimum location
