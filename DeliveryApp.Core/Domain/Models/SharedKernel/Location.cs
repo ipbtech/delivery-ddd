@@ -50,12 +50,12 @@ public class Location : ValueObject
     /// <returns>New Location</returns>
     public static Result<Location, Error> Create(int x, int y)
     {
-        if (x < 1 || x > 10)
+        if (x < _minCoordinate || x > _maxCoordinate)
         {
             return GeneralErrors.ValueIsInvalid(nameof(x));
         }
 
-        if (y < 1 || y > 10)
+        if (y < _minCoordinate || y > _maxCoordinate)
         {
             return GeneralErrors.ValueIsInvalid(nameof(y));
         }
