@@ -99,7 +99,7 @@ public sealed class StoragePlace : Entity<Guid>
         }
 
         OrderId = orderId;
-        return new UnitResult<Error>();
+        return UnitResult.Success<Error>();
     }
 
     /// <summary>
