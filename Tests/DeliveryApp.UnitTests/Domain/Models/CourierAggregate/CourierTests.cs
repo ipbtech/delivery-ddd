@@ -22,6 +22,7 @@ public class CourierTests
 
         //Assert
         result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().NotBeEmpty();
         result.Value.Name.Should().BeEquivalentTo(name);
         result.Value.Speed.Should().Be(speed);
         result.Value.Location.Should().BeEquivalentTo(Location.Max);
