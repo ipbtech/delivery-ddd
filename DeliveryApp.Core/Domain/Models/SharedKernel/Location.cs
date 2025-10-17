@@ -5,7 +5,7 @@ using Primitives;
 namespace DeliveryApp.Core.Domain.Models.SharedKernel;
 
 /// <summary>
-/// Location Value Object
+/// Локация
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class Location : ValueObject
@@ -22,32 +22,31 @@ public class Location : ValueObject
     }
 
     /// <summary>
-    /// Coordinate X
+    /// X координата
     /// </summary>
     public int X { get; }
 
     /// <summary>
-    /// Coordinate Y
+    /// Y координата
     /// </summary>
     public int Y { get; }
 
     /// <summary>
-    /// Available minimum location
+    /// Допустимая минимальная локация
     /// </summary>
     public static Location Min => new(_minCoordinate, _minCoordinate);
 
     /// <summary>
-    /// Available maximum location
+    /// Допустимая максимальная локация
     /// </summary>
     public static Location Max => new(_maxCoordinate, _maxCoordinate);
 
-
     /// <summary>
-    /// Create new location with passed coordinates
+    /// Создать новую локацию с переданными координатами
     /// </summary>
-    /// <param name="x">Coordinate X</param>
-    /// <param name="y">Coordinate Y</param>
-    /// <returns>New Location</returns>
+    /// <param name="x">X координата</param>
+    /// <param name="y">Y координата</param>
+    /// <returns>Новая локация</returns>
     public static Result<Location, Error> Create(int x, int y)
     {
         if (x < _minCoordinate || x > _maxCoordinate)
@@ -64,9 +63,9 @@ public class Location : ValueObject
     }
 
     /// <summary>
-    /// Create new random location
+    /// Создать новую локацию с рандомными координатами
     /// </summary>
-    /// <returns></returns>
+    /// <returns>Новая локация</returns>
     public static Result<Location> CreateRandom()
     {
         return new Location(
@@ -76,10 +75,10 @@ public class Location : ValueObject
     }
 
     /// <summary>
-    /// Calculate distance between two locations
+    /// Рассчитать расстояние между двумя локациями как сумму длин между X и Y
     /// </summary>
-    /// <param name="another">Another location</param>
-    /// <returns>Distance between locations</returns>
+    /// <param name="another">Другая локация</param>
+    /// <returns>Расстояние между локациями</returns>
     public Result<int, Error> DistanceBetween(Location another)
     {
         if (this == another)
