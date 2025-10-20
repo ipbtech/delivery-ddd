@@ -90,7 +90,7 @@ public sealed class Courier : Aggregate<Guid>
         foreach (var storagePlace in StoragePlaces)
         {
             var result = storagePlace.CanStore(order.Volume);
-            if (result.IsSuccess)
+            if (result is { IsSuccess: true, Value: true })
             {
                 return true;
             }
@@ -108,7 +108,7 @@ public sealed class Courier : Aggregate<Guid>
         foreach (var storagePlace in StoragePlaces)
         {
             var result = storagePlace.CanStore(order.Volume);
-            if (result.IsSuccess)
+            if (result is { IsSuccess: true, Value: true })
             {
                 return storagePlace.StoreOrder(order.Id, order.Volume);
             }
