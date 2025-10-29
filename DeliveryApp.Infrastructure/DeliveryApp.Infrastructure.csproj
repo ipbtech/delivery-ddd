@@ -34,4 +34,8 @@
         <ProjectReference Include="..\DeliveryApp.Core\DeliveryApp.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Adapters\Postgres\Migrations\" />
+    </ItemGroup>
+
 </Project>
