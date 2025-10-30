@@ -37,9 +37,9 @@ public class OrderRepository(ApplicationDbContext dbContext) : IOrderRepository
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<Order>> GetAllInAssignedStatusAsync()
+    public Task<List<Order>> GetAllInAssignedStatusAsync()
     {
-        return await _dbContext.Orders
+        return _dbContext.Orders
             .Where(o => o.Status.Name == OrderStatus.Assigned.Name).ToListAsync();
     }
 }

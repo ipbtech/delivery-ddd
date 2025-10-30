@@ -30,9 +30,9 @@ public class CourierRepository(ApplicationDbContext dbContext) : ICourierReposit
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<Courier>> GetAllFreeAsync()
+    public Task<List<Courier>> GetAllFreeAsync()
     {
-        return await _dbContext.Couriers
+        return _dbContext.Couriers
             .Where(o => o.StoragePlaces.All(c=> !c.OrderId.HasValue)).ToListAsync();
     }
 }
