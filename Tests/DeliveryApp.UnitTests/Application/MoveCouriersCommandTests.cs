@@ -1,4 +1,5 @@
-﻿using DeliveryApp.Core.Application.Commands.MoveCouriers;
+﻿using CSharpFunctionalExtensions;
+using DeliveryApp.Core.Application.Commands.MoveCouriers;
 using DeliveryApp.Core.Domain.Models.CourierAggregate;
 using DeliveryApp.Core.Domain.Models.OrderAggregate;
 using DeliveryApp.Core.Domain.Models.SharedKernel;
@@ -8,11 +9,8 @@ using NSubstitute;
 using Primitives;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using Xunit;
 
 namespace DeliveryApp.UnitTests.Application;
