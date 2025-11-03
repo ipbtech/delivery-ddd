@@ -24,7 +24,6 @@ public class CreateOrderHandler(IUnitOfWork unitOfWork, IOrderRepository orderRe
         // TODO: в будущем будем получать из другого сервиса Geo
         var location = Location.CreateRandom().Value;
 
-        // Создаем заказ
         var orderCreateResult = Order.Create(message.OrderId, location, message.Volume);
         if (orderCreateResult.IsFailure)
         {

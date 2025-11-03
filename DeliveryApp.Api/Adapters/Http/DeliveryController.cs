@@ -46,20 +46,24 @@ public class DeliveryController(IMediator mediator) : DefaultApiController
         var createOrderCommandResult = CreateOrderCommand.Create(orderId, street, 5);
         if (createOrderCommandResult.IsFailure)
         {
-            return BadRequest(createOrderCommandResult.Error);
+            return BadRequest(new ProblemDetails()
+            {
+                Status = (int)HttpStatusCode.BadRequest,
+                Detail = createOrderCommandResult.Error.Message
+            });
         }
 
         var response = await mediator.Send(createOrderCommandResult.Value);
-        if (response.IsSuccess)
+        if (response.IsFailure)
         {
-            return Ok();
+            return BadRequest(new ProblemDetails()
+            {
+                Status = (int)HttpStatusCode.BadRequest,
+                Detail = response.Error.Message
+            });
         }
 
-        return Conflict(new ProblemDetails()
-        {
-            Status = (int)HttpStatusCode.Conflict,
-            Detail = response.Error.Message
-        });
+        return Ok();
     }
 
     public override async Task<IActionResult> GetCouriers()
@@ -88,17 +92,26 @@ public class DeliveryController(IMediator mediator) : DefaultApiController
 
     public override async Task<IActionResult> CreateCourier(NewCourier newCourier)
     {
-        var createCourierCommand = CreateCourierCommand.Create(newCourier.Name, newCourier.Speed);
-        var response = await mediator.Send(createCourierCommand.Value);
-        if (response.IsSuccess)
+        var createCourierCommandResult = CreateCourierCommand.Create(newCourier.Name, newCourier.Speed);
+        if (createCourierCommandResult.IsFailure)
         {
-            return Ok();
+            return BadRequest(new ProblemDetails()
+            {
+                Status = (int)HttpStatusCode.BadRequest,
+                Detail = createCourierCommandResult.Error.Message
+            });
         }
 
-        return Conflict(new ProblemDetails()
+        var response = await mediator.Send(createCourierCommandResult.Value);
+        if (response.IsFailure)
         {
-            Status = (int)HttpStatusCode.Conflict,
-            Detail = response.Error.Message
-        });
+            return Conflict(new ProblemDetails()
+            {
+                Status = (int)HttpStatusCode.Conflict,
+                Detail = response.Error.Message
+            });
+        }
+
+        return Ok();
     }
 }
