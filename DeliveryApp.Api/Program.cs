@@ -1,8 +1,15 @@
+using CSharpFunctionalExtensions;
 using DeliveryApp.Api;
+using DeliveryApp.Core.Application.Commands.AssignOrder;
+using DeliveryApp.Core.Application.Commands.CreateOrder;
+using DeliveryApp.Core.Application.Commands.MoveCouriers;
+using DeliveryApp.Core.Application.Queries.GetAllCouriers;
+using DeliveryApp.Core.Application.Queries.GetNotCompletedOrders;
 using DeliveryApp.Core.Domain.Services;
 using DeliveryApp.Core.Ports.Repositories;
 using DeliveryApp.Infrastructure.Adapters.Postgres;
 using DeliveryApp.Infrastructure.Adapters.Postgres.Repositories;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
@@ -12,6 +19,7 @@ using OpenApi.Formatters;
 using OpenApi.OpenApi;
 using Primitives;
 using System.Reflection;
+using DeliveryApp.Core.Application.Commands.CreateCourier;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +59,19 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
+// Mediatr
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+builder.Logging.AddFilter("LuckyPennySoftware.MediatR.License", LogLevel.None); // скрываем варнинг об отсутствии лицензии
+
+// Commands
+builder.Services.AddTransient<IRequestHandler<CreateOrderCommand, UnitResult<Error>>, CreateOrderHandler>();
+builder.Services.AddTransient<IRequestHandler<AssignOrderCommand, UnitResult<Error>>, AssignOrderHandler>();
+builder.Services.AddTransient<IRequestHandler<CreateCourierCommand, UnitResult<Error>>, CreateCourierHandler>();
+builder.Services.AddTransient<IRequestHandler<MoveCouriersCommand, UnitResult<Error>>, MoveCouriersHandler>();
+
+//// Queries
+builder.Services.AddTransient<IRequestHandler<GetNotCompletedOrdersQuery, GetNotCompletedOrdersResponse>>(_ => new GetNotCompletedOrdersHandler(connectionString));
+builder.Services.AddTransient<IRequestHandler<GetAllCouriersQuery, GetAllCouriersResponse>>(_ => new GetAllCouriersHandler(connectionString));
 
 // HTTP Handlers
 builder.Services.AddControllers(options =>
@@ -66,7 +86,6 @@ builder.Services.AddControllers(options =>
             NamingStrategy = new CamelCaseNamingStrategy()
         });
     });
-
 
 // Swagger
 builder.Services.AddSwaggerGen(options =>
