@@ -1,4 +1,4 @@
-# Демо проект к курсу "Domain Driven Design и Clean Architecture на языке C#"
+# Проект по курсу "Domain Driven Design и Clean Architecture на языке C#"
 
 📚 Подробнее о курсе: [microarch.ru/courses/ddd/languages/csharp](https://microarch.ru/courses/ddd/languages/csharp?utm_source=gitlab&utm_medium=repository)
 
