@@ -12,6 +12,12 @@
 
 ---
 
+## Фронтенд
+
+После запуска инфры фронтенд бэк офиса будет доступен по http://localhost:8086/
+
+---
+
 # OpenApi 
 Вызывать из папки DeliveryApp.Api/Adapters/Http/Contract
 ```
