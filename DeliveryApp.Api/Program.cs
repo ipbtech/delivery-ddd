@@ -109,20 +109,28 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 
+// Exception handler
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ExceptionHandler>();
+
 var app = builder.Build();
 
 // -----------------------------------
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
+{
     app.UseDeveloperExceptionPage();
+}
 else
+{
     app.UseHsts();
+    app.UseExceptionHandler();
+}
 
 app.UseHealthChecks("/health");
 app.UseRouting();
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
+//app.UseStaticFiles();
 app.UseSwagger(c => { c.RouteTemplate = "openapi/{documentName}/openapi.json"; })
     .UseSwaggerUI(options =>
     {
