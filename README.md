@@ -4,10 +4,6 @@
 
 ---
 
-## Условия использования
-
-Вы можете использовать и модифицировать данный код **в образовательных целях**, при условии сохранения ссылки на курс и оригинального источника.
-
 ---
 
 ## Инфраструктура
@@ -21,6 +17,17 @@
 ```
 cd DeliveryApp.Api/Adapters/Http/Contract/
 openapi-generator generate -i https://gitlab.com/microarch-ru/microservices/dotnet/system-design/-/raw/main/services/delivery/contracts/openapi.yml -g aspnetcore -o . --package-name OpenApi --additional-properties classModifier=abstract --additional-properties operationResultTask=true
+```
+Для запуска генерации Api в изолирвованном Docker контейнере (без установки OpenAPI Generator CLI)
+```
+cd DeliveryApp.Api/Adapters/Http/Contract/
+docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate `
+    -i https://gitlab.com/microarch-ru/microservices/dotnet/system-design/-/raw/main/services/delivery/contracts/openapi.yml `
+    -g aspnetcore `
+    -o /local `
+    --package-name OpenApi `
+    --additional-properties classModifier=abstract `
+    --additional-properties operationResultTask=true
 ```
 # БД
 ```
