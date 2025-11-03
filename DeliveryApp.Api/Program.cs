@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using DeliveryApp.Api;
 using DeliveryApp.Core.Application.Commands.AssignOrder;
+using DeliveryApp.Core.Application.Commands.CreateCourier;
 using DeliveryApp.Core.Application.Commands.CreateOrder;
 using DeliveryApp.Core.Application.Commands.MoveCouriers;
 using DeliveryApp.Core.Application.Queries.GetAllCouriers;
@@ -18,8 +19,9 @@ using OpenApi.Filters;
 using OpenApi.Formatters;
 using OpenApi.OpenApi;
 using Primitives;
+using Quartz;
 using System.Reflection;
-using DeliveryApp.Core.Application.Commands.CreateCourier;
+using DeliveryApp.Api.Adapters.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,6 +110,27 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<GeneratePathParamsValidationFilter>();
 });
 builder.Services.AddSwaggerGenNewtonsoftSupport();
+
+// CRON Jobs
+builder.Services.AddQuartz(configure =>
+{
+    var assignOrdersJobKey = JobKey.Create(nameof(AssignOrdersJob));
+    var moveCouriersJobKey = JobKey.Create(nameof(MoveCouriersJob));
+    configure
+        .AddJob<AssignOrdersJob>(assignOrdersJobKey)
+        .AddTrigger(
+            trigger => trigger.ForJob(assignOrdersJobKey)
+                .WithSimpleSchedule(schedule => schedule
+                    .WithIntervalInSeconds(1)
+                    .RepeatForever()))
+        .AddJob<MoveCouriersJob>(moveCouriersJobKey)
+        .AddTrigger(
+            trigger => trigger.ForJob(moveCouriersJobKey)
+                .WithSimpleSchedule(schedule => schedule
+                    .WithIntervalInSeconds(2)
+                    .RepeatForever()));
+});
+builder.Services.AddQuartzHostedService();
 
 // Exception handler
 builder.Services.AddProblemDetails();
