@@ -1,11 +1,27 @@
+using CSharpFunctionalExtensions;
 using DeliveryApp.Api;
+using DeliveryApp.Core.Application.Commands.AssignOrder;
+using DeliveryApp.Core.Application.Commands.CreateCourier;
+using DeliveryApp.Core.Application.Commands.CreateOrder;
+using DeliveryApp.Core.Application.Commands.MoveCouriers;
+using DeliveryApp.Core.Application.Queries.GetAllCouriers;
+using DeliveryApp.Core.Application.Queries.GetNotCompletedOrders;
 using DeliveryApp.Core.Domain.Services;
 using DeliveryApp.Core.Ports.Repositories;
 using DeliveryApp.Infrastructure.Adapters.Postgres;
 using DeliveryApp.Infrastructure.Adapters.Postgres.Repositories;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using OpenApi.Filters;
+using OpenApi.Formatters;
+using OpenApi.OpenApi;
 using Primitives;
+using Quartz;
 using System.Reflection;
+using DeliveryApp.Api.Adapters.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +34,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         policy =>
         {
-            policy.AllowAnyOrigin(); // Не делайте так в проде!
+            policy.AllowAnyOrigin();
         });
 });
 
@@ -45,19 +61,110 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
+// Mediatr
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+builder.Logging.AddFilter("LuckyPennySoftware.MediatR.License", LogLevel.None); // скрываем варнинг об отсутствии лицензии
+
+// Commands
+builder.Services.AddTransient<IRequestHandler<CreateOrderCommand, UnitResult<Error>>, CreateOrderHandler>();
+builder.Services.AddTransient<IRequestHandler<AssignOrderCommand, UnitResult<Error>>, AssignOrderHandler>();
+builder.Services.AddTransient<IRequestHandler<CreateCourierCommand, UnitResult<Error>>, CreateCourierHandler>();
+builder.Services.AddTransient<IRequestHandler<MoveCouriersCommand, UnitResult<Error>>, MoveCouriersHandler>();
+
+//// Queries
+builder.Services.AddTransient<IRequestHandler<GetNotCompletedOrdersQuery, GetNotCompletedOrdersResponse>>(_ => new GetNotCompletedOrdersHandler(connectionString));
+builder.Services.AddTransient<IRequestHandler<GetAllCouriersQuery, GetAllCouriersResponse>>(_ => new GetAllCouriersHandler(connectionString));
+
+// HTTP Handlers
+builder.Services.AddControllers(options =>
+    {
+        options.InputFormatters.Insert(0, new InputFormatterStream());
+    })
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+        options.SerializerSettings.Converters.Add(new StringEnumConverter
+        {
+            NamingStrategy = new CamelCaseNamingStrategy()
+        });
+    });
+
+// Swagger
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("1.0.0", new OpenApiInfo
+    {
+        Title = "Delivery Service",
+        Description = "Отвечает за диспетчеризацию доставки",
+        Contact = new OpenApiContact
+        {
+            Name = "Kirill Vetchinkin",
+            Url = new Uri("https://microarch.ru"),
+            Email = "info@microarch.ru"
+        }
+    });
+    options.CustomSchemaIds(type => type.FriendlyId(true));
+    options.IncludeXmlComments(
+        $"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{Assembly.GetEntryAssembly()?.GetName().Name}.xml");
+    options.DocumentFilter<BasePathFilter>("");
+    options.OperationFilter<GeneratePathParamsValidationFilter>();
+});
+builder.Services.AddSwaggerGenNewtonsoftSupport();
+
+// CRON Jobs
+builder.Services.AddQuartz(configure =>
+{
+    var assignOrdersJobKey = JobKey.Create(nameof(AssignOrdersJob));
+    var moveCouriersJobKey = JobKey.Create(nameof(MoveCouriersJob));
+    configure
+        .AddJob<AssignOrdersJob>(assignOrdersJobKey)
+        .AddTrigger(
+            trigger => trigger.ForJob(assignOrdersJobKey)
+                .WithSimpleSchedule(schedule => schedule
+                    .WithIntervalInSeconds(1)
+                    .RepeatForever()))
+        .AddJob<MoveCouriersJob>(moveCouriersJobKey)
+        .AddTrigger(
+            trigger => trigger.ForJob(moveCouriersJobKey)
+                .WithSimpleSchedule(schedule => schedule
+                    .WithIntervalInSeconds(2)
+                    .RepeatForever()));
+});
+builder.Services.AddQuartzHostedService();
+
+// Exception handler
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ExceptionHandler>();
 
 var app = builder.Build();
 
 // -----------------------------------
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
+{
     app.UseDeveloperExceptionPage();
+}
 else
+{
     app.UseHsts();
+    app.UseExceptionHandler();
+}
 
 app.UseHealthChecks("/health");
 app.UseRouting();
+
+//app.UseStaticFiles();
+app.UseSwagger(c => { c.RouteTemplate = "openapi/{documentName}/openapi.json"; })
+    .UseSwaggerUI(options =>
+    {
+        options.RoutePrefix = "openapi";
+        options.SwaggerEndpoint("/openapi/1.0.0/openapi.json", "Swagger Delivery Service");
+        options.RoutePrefix = string.Empty;
+        options.SwaggerEndpoint("/openapi-original.json", "Swagger Delivery Service");
+    });
+
+app.UseCors();
+app.MapControllers();
 
 // Apply Migrations
 using (var scope = app.Services.CreateScope())
