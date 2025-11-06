@@ -3,6 +3,10 @@
 📚 Подробнее о курсе: [microarch.ru/courses/ddd/languages/csharp](https://microarch.ru/courses/ddd/languages/csharp?utm_source=gitlab&utm_medium=repository)
 
 ---
+## Общая схема приложения
+В данном репозитории разрабатываем микросервис Delivery
+
+<img width="1200" height="572" alt="382" src="https://github.com/user-attachments/assets/ab5a6a0b-a37f-4ce1-bb1e-e5a6a4be284d" />
 
 ---
 
