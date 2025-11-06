@@ -28,6 +28,8 @@ using Primitives;
 using Quartz;
 using System.Reflection;
 
+// ReSharper disable NotResolvedInText
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Cors
