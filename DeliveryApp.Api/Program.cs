@@ -1,5 +1,7 @@
+using Clients.Geo;
 using CSharpFunctionalExtensions;
 using DeliveryApp.Api;
+using DeliveryApp.Api.Adapters.BackgroundJobs;
 using DeliveryApp.Core.Application.Commands.AssignOrder;
 using DeliveryApp.Core.Application.Commands.CreateCourier;
 using DeliveryApp.Core.Application.Commands.CreateOrder;
@@ -7,9 +9,13 @@ using DeliveryApp.Core.Application.Commands.MoveCouriers;
 using DeliveryApp.Core.Application.Queries.GetAllCouriers;
 using DeliveryApp.Core.Application.Queries.GetNotCompletedOrders;
 using DeliveryApp.Core.Domain.Services;
+using DeliveryApp.Core.Ports;
 using DeliveryApp.Core.Ports.Repositories;
+using DeliveryApp.Infrastructure.Adapters.Grpc.GeoService;
 using DeliveryApp.Infrastructure.Adapters.Postgres;
 using DeliveryApp.Infrastructure.Adapters.Postgres.Repositories;
+using Grpc.Core;
+using Grpc.Net.Client.Configuration;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -21,12 +27,8 @@ using OpenApi.OpenApi;
 using Primitives;
 using Quartz;
 using System.Reflection;
-using DeliveryApp.Api.Adapters.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Health Checks
-builder.Services.AddHealthChecks();
 
 // Cors
 builder.Services.AddCors(options =>
@@ -40,7 +42,11 @@ builder.Services.AddCors(options =>
 
 // Configuration
 builder.Services.ConfigureOptions<SettingsSetup>();
-var connectionString = builder.Configuration["CONNECTION_STRING"];
+var connectionString = builder.Configuration["CONNECTION_STRING"] ??
+    throw new ArgumentNullException("CONNECTION_STRING");
+
+var geoServiceAddress = builder.Configuration["GEO_SERVICE_GRPC_HOST"] ?? 
+    throw new ArgumentNullException("GEO_SERVICE_GRPC_HOST");
 
 // Domain Services
 builder.Services.AddScoped<IDispatchService, DispatchService>();
@@ -49,7 +55,10 @@ builder.Services.AddScoped<IDispatchService, DispatchService>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
         options.UseNpgsql(connectionString,
-            sqlOptions => { sqlOptions.MigrationsAssembly("DeliveryApp.Infrastructure"); });
+            sqlOptions =>
+            {
+                sqlOptions.MigrationsAssembly("DeliveryApp.Infrastructure");
+            });
         options.EnableSensitiveDataLogging();
     }
 );
@@ -71,7 +80,7 @@ builder.Services.AddTransient<IRequestHandler<AssignOrderCommand, UnitResult<Err
 builder.Services.AddTransient<IRequestHandler<CreateCourierCommand, UnitResult<Error>>, CreateCourierHandler>();
 builder.Services.AddTransient<IRequestHandler<MoveCouriersCommand, UnitResult<Error>>, MoveCouriersHandler>();
 
-//// Queries
+// Queries
 builder.Services.AddTransient<IRequestHandler<GetNotCompletedOrdersQuery, GetNotCompletedOrdersResponse>>(_ => new GetNotCompletedOrdersHandler(connectionString));
 builder.Services.AddTransient<IRequestHandler<GetAllCouriersQuery, GetAllCouriersResponse>>(_ => new GetAllCouriersHandler(connectionString));
 
@@ -88,6 +97,41 @@ builder.Services.AddControllers(options =>
             NamingStrategy = new CamelCaseNamingStrategy()
         });
     });
+
+// gRPC
+builder.Services.AddScoped<IGeoClient, GeoClient>();
+builder.Services.AddGrpcClient<Geo.GeoClient>(options =>
+{
+    options.Address = new Uri(geoServiceAddress);
+})
+.ConfigureChannel(options =>
+{
+    options.HttpHandler = new SocketsHttpHandler
+    {
+        PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
+        KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+        KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+        EnableMultipleHttp2Connections = true
+    };
+
+    var methodConfig = new MethodConfig
+    {
+        Names = { MethodName.Default },
+        RetryPolicy = new RetryPolicy
+        {
+            MaxAttempts = 5,
+            InitialBackoff = TimeSpan.FromSeconds(1),
+            MaxBackoff = TimeSpan.FromSeconds(5),
+            BackoffMultiplier = 1.5,
+            RetryableStatusCodes = { StatusCode.Unavailable }
+        },
+    };
+
+    options.ServiceConfig = new ServiceConfig()
+    {
+        MethodConfigs = { methodConfig }
+    };
+});
 
 // Swagger
 builder.Services.AddSwaggerGen(options =>
@@ -131,6 +175,9 @@ builder.Services.AddQuartz(configure =>
                     .RepeatForever()));
 });
 builder.Services.AddQuartzHostedService();
+
+// Health Checks
+builder.Services.AddHealthChecks();
 
 // Exception handler
 builder.Services.AddProblemDetails();

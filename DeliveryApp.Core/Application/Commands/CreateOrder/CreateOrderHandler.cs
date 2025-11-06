@@ -1,6 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using DeliveryApp.Core.Domain.Models.OrderAggregate;
-using DeliveryApp.Core.Domain.Models.SharedKernel;
+using DeliveryApp.Core.Ports;
 using DeliveryApp.Core.Ports.Repositories;
 using MediatR;
 using Primitives;
@@ -10,7 +10,10 @@ namespace DeliveryApp.Core.Application.Commands.CreateOrder;
 /// <summary>
 /// Обработчик для <see cref="CreateOrderCommand"/>
 /// </summary>
-public class CreateOrderHandler(IUnitOfWork unitOfWork, IOrderRepository orderRepository) : IRequestHandler<CreateOrderCommand, UnitResult<Error>>
+public class CreateOrderHandler(
+    IUnitOfWork unitOfWork, 
+    IOrderRepository orderRepository,
+    IGeoClient geoClient) : IRequestHandler<CreateOrderCommand, UnitResult<Error>>
 {
     /// <inheritdoc />
     public async Task<UnitResult<Error>> Handle(CreateOrderCommand message, CancellationToken cancellationToken)
@@ -21,9 +24,13 @@ public class CreateOrderHandler(IUnitOfWork unitOfWork, IOrderRepository orderRe
             return UnitResult.Success<Error>();
         }
 
-        // TODO: в будущем будем получать из другого сервиса Geo
-        var location = Location.CreateRandom().Value;
+        var getLocationResult = await geoClient.GetLocationAsync(message.Street, cancellationToken);
+        if (getLocationResult.IsFailure)
+        {
+            return getLocationResult.Error;
+        }
 
+        var location = getLocationResult.Value;
         var orderCreateResult = Order.Create(message.OrderId, location, message.Volume);
         if (orderCreateResult.IsFailure)
         {
