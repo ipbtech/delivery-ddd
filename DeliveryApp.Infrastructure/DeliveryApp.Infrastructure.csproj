@@ -9,6 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <None Remove="Adapters\Grpc\GeoService\Contract.proto" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Confluent.Kafka" Version="2.12.0" />
         <PackageReference Include="Google.Protobuf" Version="3.33.0" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
@@ -37,6 +41,10 @@
 
     <ItemGroup>
       <Folder Include="Adapters\Postgres\Migrations\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="Adapters\Grpc\GeoService\Contract.proto" />
     </ItemGroup>
 
 </Project>
