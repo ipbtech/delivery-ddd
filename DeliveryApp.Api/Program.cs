@@ -27,6 +27,7 @@ using OpenApi.OpenApi;
 using Primitives;
 using Quartz;
 using System.Reflection;
+using DeliveryApp.Api.Adapters.Kafka.BasketConfirmed;
 
 // ReSharper disable NotResolvedInText
 
@@ -134,6 +135,14 @@ builder.Services.AddGrpcClient<Geo.GeoClient>(options =>
         MethodConfigs = { methodConfig }
     };
 });
+
+// Message Broker Consumer
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHostedService<BasketConfirmedConsumer>();
 
 // Swagger
 builder.Services.AddSwaggerGen(options =>
