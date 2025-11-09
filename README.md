@@ -12,13 +12,14 @@
 
 ## Инфраструктура
 
-[Поднять всю зависимую инфру через docker-compose ](https://gitlab.com/microarch-ru/ddd-in-practice/infrastructure)
+[Поднять инфру и все зависмые сервисы через docker-compose ](https://gitlab.com/microarch-ru/ddd-in-practice/infrastructure)
 
 ---
 
 ## Фронтенд
 
 После запуска инфры фронтенд бэк офиса будет доступен по http://localhost:8086/
+Посмотреть сообщения Кафки в Kowl: http://localhost:8087/topics
 
 ---
 
